@@ -1,4 +1,4 @@
-import {Image, StyleSheet, Platform, FlatList, View, Button, SafeAreaView, Animated} from 'react-native';
+import {Image, StyleSheet, Platform, FlatList, View, Button, SafeAreaView, Animated, Text} from 'react-native';
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
@@ -21,16 +21,19 @@ export default function HomeScreen() {
     const [refresh, setRefresh] = useState<boolean>(true);
     const [testSize, setTestSize] = useState<number>(0);
     const [tests, setTests] = useState<Test[]>([]);
+    const [loading, setLoading] = useState<boolean>(false);
 
-    const fetchTests = async (): Promise<boolean> => {
+    const fetchTests = async () => {
         try {
-            const response = await fetch("http://localhost:8080/test", {
-                headers: { "Content-Type": "application/json" },
-                method: "GET",
+            const response = await fetch("http://192.168.1.136:8080/test", {
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
                 mode: "cors",
             });
 
-            const responseJson: Test[] | undefined | null = await response.json();
+            const responseJson: Test[] = await response.json();
 
             if (!responseJson) return false;
 
@@ -39,14 +42,15 @@ export default function HomeScreen() {
 
             return true;
         } catch (error) {
-
-            return false;
+            console.log(error);
+        } finally {
+            setLoading(false);
         }
     };
 
     const createTest = async () => {
         try {
-            await fetch("http://localhost:8080/test/create", {
+            await fetch("http://192.168.1.136:8080/test/create", {
                 headers: { "Content-Type": "application/json" },
                 method: "POST",
                 mode: "cors",
@@ -54,85 +58,92 @@ export default function HomeScreen() {
 
             setRefresh(true);
         } catch (error) {
-
+            console.log(error);
+        } finally {
+            setLoading(true);
         }
     };
 
     useEffect(() => {
-        if (refresh) {
-            console.log("Fetching tests...");
-            fetchTests().finally(() => setRefresh(false));
-        }
+        fetchTests().then(r => setRefresh(false));
     }, [refresh]);
 
-    return (
-        <ParallaxScrollView
-            headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-            headerImage={
-                <Image
-                    source={require('@/assets/images/partial-react-logo.png')}
-                    style={styles.reactLogo}
-                />
-            }
-        >
-            <ThemedText type={"title"}>Tests</ThemedText>
-            <SafeAreaProvider>
-                <SafeAreaView style={styles.stepContainer}>
-                    <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
-                        {tests.map((item) => (
-                            <ThemedView key={item.id?.toString()} style={styles.stepContainer}>
-                                <ThemedText type="defaultSemiBold">id: </ThemedText>
-                                <TestView id={item.id} />
-                            </ThemedView>
-                        ))}
-                    </ScrollView>
-                </SafeAreaView>
-            </SafeAreaProvider>
-
-            <ThemedView style={styles.stepContainer}>
-                <Button title="Create test" onPress={createTest} />
-
-                {/* Static Sections */}
-                <ThemedView style={styles.titleContainer}>
-                    <ThemedText type="title">Welcome!</ThemedText>
-                    <HelloWave />
-                </ThemedView>
+    if(!loading) {
+        return (
+            <ParallaxScrollView
+                headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
+                headerImage={
+                    <Image
+                        source={require('@/assets/images/partial-react-logo.png')}
+                        style={styles.reactLogo}
+                    />
+                }
+            >
+                <ThemedText type={"title"}>Tests</ThemedText>
+                <SafeAreaProvider>
+                    <SafeAreaView style={styles.stepContainer}>
+                        <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+                            {tests.map((item) => (
+                                <ThemedView key={item.id?.toString()} style={styles.stepContainer}>
+                                    <ThemedText type="defaultSemiBold">id: </ThemedText>
+                                    <TestView id={item.id} />
+                                </ThemedView>
+                            ))}
+                        </ScrollView>
+                    </SafeAreaView>
+                </SafeAreaProvider>
 
                 <ThemedView style={styles.stepContainer}>
-                    <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-                    <ThemedText>
-                        Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-                        <ThemedText type="defaultSemiBold">
-                            {Platform.select({
-                                ios: 'cmd + d',
-                                android: 'cmd + m',
-                                web: 'F12'
-                            })}
-                        </ThemedText>{' '} to open developer tools.
-                    </ThemedText>
-                </ThemedView>
+                    <Button title="Create test" onPress={createTest} />
 
-                <ThemedView style={styles.stepContainer}>
-                    <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-                    <ThemedText>
-                        Tap the Explore tab to learn more about what's included in this starter app.
-                    </ThemedText>
-                </ThemedView>
+                    {/* Static Sections */}
+                    <ThemedView style={styles.titleContainer}>
+                        <ThemedText type="title">Welcome!</ThemedText>
+                        <HelloWave />
+                    </ThemedView>
 
-                <ThemedView style={styles.stepContainer}>
-                    <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-                    <ThemedText>
-                        When you're ready, run{' '}
-                        <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-                        <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-                        <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-                        <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-                    </ThemedText>
-                </ThemedView>
+                    <ThemedView style={styles.stepContainer}>
+                        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
+                        <ThemedText>
+                            Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
+                            <ThemedText type="defaultSemiBold">
+                                {Platform.select({
+                                    ios: 'cmd + d',
+                                    android: 'cmd + m',
+                                    web: 'F12'
+                                })}
+                            </ThemedText>{' '} to open developer tools.
+                        </ThemedText>
+                    </ThemedView>
 
-            </ThemedView>
-        </ParallaxScrollView>
-    );
+                    <ThemedView style={styles.stepContainer}>
+                        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
+                        <ThemedText>
+                            Tap the Explore tab to learn more about what's included in this starter app.
+                        </ThemedText>
+                    </ThemedView>
+
+                    <ThemedView style={styles.stepContainer}>
+                        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
+                        <ThemedText>
+                            When you're ready, run{' '}
+                            <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
+                            <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
+                            <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
+                            <ThemedText type="defaultSemiBold">app-example</ThemedText>.
+                        </ThemedText>
+                    </ThemedView>
+
+                </ThemedView>
+            </ParallaxScrollView>
+        );
+    } else {
+        return (
+            <View>
+                <Text>Loading</Text>
+            </View>
+        );
+    }
 }
 
 const styles = StyleSheet.create({
